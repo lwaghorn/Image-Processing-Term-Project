@@ -15,14 +15,21 @@ while True:
         break
     # Apply background subtraction
     fg = bsub.apply(frame)
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
+    opening = cv2.morphologyEx(fg, cv2.MORPH_OPEN, kernel)
     # Show frames
     cv2.imshow('Frame', frame)
     cv2.imshow('Foreground', fg)
+    cv2.imshow('Opening', opening)
     k = cv2.waitKey(30)
     if k == 27:
         break
+
+
 cap.release()
 cv2.destroyAllWindows()
+
+
 
 
 # # Background Subtraction Using Weighted Averages
