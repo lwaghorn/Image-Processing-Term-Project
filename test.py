@@ -1,12 +1,35 @@
 import cv2
 import numpy as np
+#from matplotlib import pyplot as plt
 
 cap = cv2.VideoCapture('video.avi')
 # Trained XML classifiers describes some features of some object we want to detect
-# cars = cv2.CascadeClassifier('cars.xml')
+cars = cv2.CascadeClassifier('cars.xml')
+
+
+# PARAMETERS FOR VEHICLE COUNTING
+# Vehicles travelling up the screen
+count_up = 0
+# Vehicles travelling down the screen
+count_down = 0
+# Get dimensions of frame
+w_frame = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+h_frame = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+# Set line to be vertically centered on frame
+line = int(h_frame/2)
+# Set line colour to be blue
+line_color = (255, 0,  0)
+# Create points for line [x,y]
+p1 = [0, line]
+p2 = [w_frame, line]
+# Assign line position
+line_pos= np.array([p1,p2], np.int32)
+
 
 # Background extraction using Mixture of Gaussians
 bsub = cv2.createBackgroundSubtractorMOG2()
+
+#hog = cv2.HOGDescriptor()
 
 while True:
     # Read frames
@@ -14,26 +37,37 @@ while True:
     if frame is None:
         break
 
-    # Apply background subtraction
+    # Working on histogram
+    # color = ('b','g','r')
+    # for i,col in enumerate(color):
+    #     # calcHist([image], [0 for gray scale, 0 1 or 2 for colored], None for mask, histSize for full scale [256], ranges [0,256]
+    #     histr = cv2.calcHist([frame],[i],None,[256],[0,256])
+    #     plt.plot(histr,color = col)
+    #     plt.xlim([0,256])
+    # plt.show()
+
+    # BACKGROUND SUBTRACTION
     fg = bsub.apply(frame)
     # Create structuring element for opening
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(2,2))
     # Remove a good portion of noise by opening
     opening = cv2.morphologyEx(fg, cv2.MORPH_OPEN, kernel)
     # Create structuring element for closing
-    kernel2 = cv2.getStructuringElement(cv2.MORPH_RECT,(3,3))
+    kernel2 = cv2.getStructuringElement(cv2.MORPH_RECT,(6,6))
     # Close gaps using closing
     closing = cv2.morphologyEx(opening, cv2.MORPH_CLOSE, kernel2)
     # Set a threshold to remove gray noise
-    (thresh, thres) = cv2.threshold(closing, 220, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+    _, thresh = cv2.threshold(closing, 220, 255, cv2.THRESH_BINARY)
+
+    # BLOB TRACKING
     # Set parameters for keypoints (blob tracking)
     params = cv2.SimpleBlobDetector_Params()
-    params.minDistBetweenBlobs = 30
+    params.minDistBetweenBlobs = 20
     params.filterByColor = True
     params.blobColor = 255
     params.filterByArea = True
-    params.minArea = 10
-    params.maxArea = 300000
+    params.minArea = 50
+    params.maxArea = 3000000
     params.filterByCircularity = False
     params.filterByConvexity = False
     params.filterByInertia = True
@@ -42,12 +76,18 @@ while True:
     # Create blob detector with set parameters
     detector = cv2.SimpleBlobDetector_create(params)
     # Detect blobs in foreground
-    keypoints = detector.detect(thres)
+    track = detector.detect(thresh)
     # Draw detected blobs as red circles.
     # cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS ensures the size of the circle corresponds to the size of blob
     # (drawKeypoints(frames, keypoints, output image, colour, flags)
-    im_with_keypoints = cv2.drawKeypoints(thres, keypoints, np.array([]), (0, 0, 255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    blob_tracking = cv2.drawKeypoints(thresh, track, np.array([]), (0, 0, 255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 
+
+    # ADD CENTERED LINE TO FRAME FOR VEHICLE COUNTING
+    frame = cv2.polylines(frame, [line_pos], False, line_color, thickness=1)
+
+
+    # SHOW ALL IMAGES
     # Show original video
     cv2.imshow('Frame', frame)
     # Show foreground
@@ -57,9 +97,10 @@ while True:
     # Show result of closing
     cv2.imshow('Closing', closing)
     # Show threshold foreground
-    cv2.imshow('Thres', thres)
-    # Show keypoints
-    cv2.imshow('Keypoints', im_with_keypoints)
+    cv2.imshow('Threshold', thresh)
+    # Show blob tracking
+    cv2.imshow('Tracking', blob_tracking)
+    #cv2.imshow('hist', hist)
     # Speed of frames
     k = cv2.waitKey(30)
     if k == 27:
@@ -71,32 +112,3 @@ cv2.destroyAllWindows()
 
 
 
-# # Background Subtraction Using Weighted Averages
-# _, frame = cap.read()
-# # Create numpy array of frames
-# avg = np.float32(frame)
-# while True:
-#     #capture frame by frame
-#     _, frame = cap.read()
-#     if frame is None:
-#         break
-#     #Get average of frames
-#     cv2.accumulateWeighted(frame, avg, 0.01)
-#     #performs three operations sequentially: scaling, taking an absolute value, conversion to an unsigned 8-bit type
-#     a = cv2.convertScaleAbs(avg)
-#     avg_frame = cv2.cvtColor(a, cv2.COLOR_BGR2GRAY)
-#     gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-#     # Subtract background from foreground
-#     diff = cv2.absdiff(avg_frame, gray_frame)
-#     #Display background
-#     cv2.imshow('avg', a)
-#     cv2.imshow('diff', diff)
-#     #displays window for 20 ms
-#     k = cv2.waitKey(20)
-#     if k == 27:
-#         break
-# cv2.destroyAllWindows()
-# cap.release()
-
-
-print("allo")

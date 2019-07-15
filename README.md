@@ -15,3 +15,10 @@ Random traffic video found on the internet
 
 cars.xml
 Random trained vehicle classifier (not used yet)
+
+
+Useful links:
+https://www.youtube.com/watch?v=inCUJ0JM5ng
+Source code for video above: https://docs.opencv.org/3.3.0/db/d5c/tutorial_py_bg_subtraction.html
+https://github.com/amartya-k/vision/blob/master/main.py
+Easy implementation: https://www.geeksforgeeks.org/opencv-python-program-vehicle-detection-video-frame/
