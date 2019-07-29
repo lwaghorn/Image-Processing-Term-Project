@@ -1,8 +1,10 @@
 import cv2
 import numpy as np
+
 #from matplotlib import pyplot as plt
 
-cap = cv2.VideoCapture('video.avi')
+cap = cv2.VideoCapture('video2.mp4')
+
 # Trained XML classifiers describes some features of some object we want to detect
 cars = cv2.CascadeClassifier('cars.xml')
 
@@ -93,6 +95,3 @@ while True:
         break
 cv2.destroyAllWindows()
 cap.release()
-
-
-print("allo")
