@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+from reasources.objects import Object
 
 crossed_up = 0
 crossed_down = 0
@@ -8,7 +9,7 @@ crossed_down_color = (255, 0, 0)
 crossed_up_color = (255, 0, 255)
 
 font = cv2.FONT_HERSHEY_SIMPLEX
-objects = []
+tracking_objects = []
 object_frame_timeout = 5
 object_id = 1
 
@@ -29,14 +30,14 @@ def update_display(new_frame):
 
 if __name__ == "__main__":
 
-    cap = cv2.VideoCapture("compressed2.avi")
+    cap = cv2.VideoCapture("videos/compressed2.avi")
 
     # Get width and height of video
 
     video_width = cap.get(3)
     video_height = cap.get(4)
     video_area = video_height * video_width
-    areaTH = video_area / 400
+    area_threshold = video_area / 400
 
     # Lines
     line_up = int(4 * (video_height / 10))
@@ -82,8 +83,14 @@ if __name__ == "__main__":
             has_frame, imBin = cv2.threshold(foreground_mask, 150, 255, cv2.THRESH_BINARY)
             # cv2.imshow('bin', imBin)
 
+            morphological_mask = cv2.medianBlur(imBin, 5)
+            # cv2.imshow('median_blur', morphological_mask)
+
             # Erode with small window to remove noise, then large dilation to join hood of car to roof
             morphological_mask = cv2.morphologyEx(imBin, cv2.MORPH_ERODE, kernelOp)
+
+            cv2.imshow('Eroded Image', morphological_mask)
+
             morphological_mask = cv2.morphologyEx(morphological_mask, cv2.MORPH_DILATE, kernelOp2)
 
             cv2.imshow('Morphed Image', morphological_mask)
@@ -93,7 +100,7 @@ if __name__ == "__main__":
 
             for contour in contours:
                 area = cv2.contourArea(contour)
-                if area > areaTH:
+                if area > area_threshold:
                     # Tracking
                     contour_moments = cv2.moments(contour)
 
@@ -106,7 +113,7 @@ if __name__ == "__main__":
 
                     contour_x, contour_y, contour_width, contour_height = cv2.boundingRect(contour)
 
-                    car = next((car for car in objects if (car.in_contour(centroid_x, centroid_y, contour_width,
+                    car = next((car for car in tracking_objects if (car.in_contour(centroid_x, centroid_y, contour_width,
                                                                           contour_height) and not car.is_done())), None)
                     if car is not None:
                         car.update_coordinates(centroid_x, centroid_y)
@@ -118,7 +125,7 @@ if __name__ == "__main__":
                             crossed_down += 1
                             print("ID:", car.get_id(), "was the ", crossed_down, 'crossing down')
                     else:  # New Car
-                        objects.append(objects.Object(object_id, centroid_x, centroid_y, object_frame_timeout))
+                        tracking_objects.append(Object(object_id, centroid_x, centroid_y, object_frame_timeout))
                         object_id += 1
 
                     cv2.circle(frame, (centroid_x, centroid_y), 5, (0, 0, 255), -1)
@@ -126,7 +133,7 @@ if __name__ == "__main__":
 
             update_display(frame)
 
-            for car in objects:
+            for car in tracking_objects:
                 car.age()
                 car.check_health()
 
