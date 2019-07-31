@@ -11,19 +11,19 @@ class Direction(Enum):
 class Object:
     history = []
 
-    def __init__(self, i, x, y, timeout_age):
-        self.i = i
+    def __init__(self, id, x, y, timeout):
+        self.id = id
         self.x = x
         self.y = y
         self.history = []
         self.done = False
-        self.timeout_age = timeout_age
+        self.timeout = timeout
         self.direction = None
         self.pulse = 0
         self.history.append([self.x, self.y])
 
     def get_id(self):  # For the ID
-        return self.i
+        return self.id
 
     def in_contour(self, contour_x, contour_y, contour_width, contour_height):
         return abs(contour_x - self.x) <= contour_width and abs(contour_y - self.y) <= contour_height
@@ -76,9 +76,9 @@ class Object:
     def check_health(self):
         if self.done:
             return
-        if self.pulse > self.timeout_age:
+        if self.pulse > self.timeout:
             self.set_done()
-            print("killed", self.i)
+            print("killed", self.id)
 
 
 

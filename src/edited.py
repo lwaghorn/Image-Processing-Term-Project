@@ -16,7 +16,7 @@ rectangle_color = (0, 255, 0)
 
 font = cv2.FONT_HERSHEY_SIMPLEX
 tracking_objects = []
-# Setting amount frames for
+# Setting max amount frames for object to not move
 object_frame_timeout = 5
 # Initalizing car id
 object_id = 1
@@ -92,18 +92,20 @@ if __name__ == "__main__":
             for contour in contours:
                 area = cv2.contourArea(contour)
                 if area > area_threshold:
-                    # Tracking
+                    # Calculate moments of contour
                     contour_moments = cv2.moments(contour)
 
-                    # Create centroid
+                    # Create centroid using moments
                     centroid_x = int(contour_moments['m10'] / contour_moments['m00'])
                     centroid_y = int(contour_moments['m01'] / contour_moments['m00'])
 
+                    # Check if centroid is within upper and lower limits
                     if centroid_y not in range(up_limit, down_limit):
                         continue
-
+                    # Draw approximate rectangle around image
                     contour_x, contour_y, contour_width, contour_height = cv2.boundingRect(contour)
 
+                    # Track cars only if car is not done and
                     car = next((car for car in tracking_objects if (car.in_contour(centroid_x, centroid_y, contour_width,
                                                                           contour_height) and not car.is_done())), None)
                     if car is not None:
