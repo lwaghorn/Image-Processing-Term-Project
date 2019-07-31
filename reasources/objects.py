@@ -11,31 +11,31 @@ class Direction(Enum):
 class Object:
     history = []
 
-    def __init__(self, i, xi, yi, max_age):
-        self.i = i
-        self.x = xi
-        self.y = yi
+    def __init__(self, id, x, y, timeout):
+        self.id = id
+        self.x = x
+        self.y = y
         self.history = []
         self.done = False
-        self.max_age = max_age
-        self.dir = None
+        self.timeout = timeout
+        self.direction = None
         self.pulse = 0
         self.history.append([self.x, self.y])
 
     def get_id(self):  # For the ID
-        return self.i
+        return self.id
 
     def in_contour(self, contour_x, contour_y, contour_width, contour_height):
         return abs(contour_x - self.x) <= contour_width and abs(contour_y - self.y) <= contour_height
 
-    def update_coordinates(self, xn, yn):
+    def update_coordinates(self, new_x, new_y):
         # print(abs(self.history[-1][1]-yn))
-        if (abs(self.history[-1][1]-yn) > movement_threshold) or (abs(self.history[-1][0]-xn) > movement_threshold):
+        if (abs(self.history[-1][1]-new_y) > movement_threshold) or (abs(self.history[-1][0]-new_x) > movement_threshold):
             # print("outside")
             return
         self.pulse = 0
-        self.x = xn
-        self.y = yn
+        self.x = new_x
+        self.y = new_y
         self.history.append([self.x, self.y])
 
     def set_done(self):
@@ -49,7 +49,7 @@ class Object:
             return False
         if len(self.history) >= 2:
             if self.history[-1][1] < up_line <= self.history[-2][1]:
-                self.dir = Direction.UP
+                self.direction = Direction.UP
                 self.done = True
                 return True
             else:
@@ -62,7 +62,7 @@ class Object:
             return False
         if len(self.history) >= 2:
             if self.history[-1][1] > down_line >= self.history[-2][1]:
-                self.dir = Direction.DOWN
+                self.direction = Direction.DOWN
                 self.done = True
                 return True
             else:
@@ -76,8 +76,10 @@ class Object:
     def check_health(self):
         if self.done:
             return
-        if self.pulse > self.max_age:
+        if self.pulse > self.timeout:
             self.set_done()
-            print("killed", self.i)
+            print("killed", self.id)
+
+
 
 
